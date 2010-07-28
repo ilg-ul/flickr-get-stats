@@ -13,13 +13,22 @@ class WriterBase(object):
         '''
         Constructor
         '''
+        self.bVerbose = False
         pass
+        
+    def setVerbose(self, bVerbose):
+        self.bVerbose = bVerbose
         
     def setDate(self, sDate):
         self.sDate = sDate
         
     def setDateStats(self, nTotal, nPhotos, nPhotoset, nSets, nCollections):
-        #TODO: store values in class variables
+        '''store values in class variables'''
+        self.nTotal = nTotal
+        self.nPhotos = nPhotos
+        self.nPhotoset = nPhotoset
+        self.nSets = nSets
+        self.nCollections = nCollections
         pass
     
     def setUserUrl(self, sUserUrl):
@@ -35,12 +44,14 @@ class WriterBase(object):
         
     def setID(self, sID, sTitle, nCount):
         self.sID = sID
-        print '%s "%s" %d' % (self.getKindFullUrl(), sTitle.encode('utf-8'), nCount)
+        if self.bVerbose:
+            print '%s "%s" %d' % (self.getKindFullUrl(), sTitle.encode('utf-8'), nCount)
         
     def setReferrerDomain(self, sDomain, nCount):
         self.sReferrerDomain = sDomain
         self.nReferrerDomainCount = nCount
-        print '\t"%s" %d' % (self.sReferrerDomain.encode('utf-8'), self.nReferrerDomainCount)
+        if self.bVerbose:
+            print '\t"%s" %d' % (self.sReferrerDomain.encode('utf-8'), self.nReferrerDomainCount)
 
     def clearReferrerDomain(self):
         self.sReferrerDomain = None
@@ -50,7 +61,8 @@ class WriterBase(object):
         self.sFullReferrerUrl = sUrl
         self.sSearchTerm = sSearchTerm
         self.nReferrerCount = nCount
-        print '\t\t"%s" "%s" %d' % (self.sFullReferrerUrl.encode('utf-8'), self.sSearchTerm.encode('utf-8'), self.nReferrerCount)
+        if self.bVerbose:
+            print '\t\t"%s" "%s" %d' % (self.sFullReferrerUrl.encode('utf-8'), self.sSearchTerm.encode('utf-8'), self.nReferrerCount)
 
     def clearReferrer(self):
         self.sFullReferrerUrl = None
@@ -70,7 +82,8 @@ class WriterBase(object):
         self.clearReferrerDomain()
         self.clearReferrer()
         self.nReferrerCount = nCount
-        print '\t"" %d (anon)' % self.nReferrerCount
+        if self.bVerbose:
+            print '\t"" %d (anon)' % self.nReferrerCount
         
     def getKindFullUrl(self):
         if self.sKind == 'photos':
