@@ -4,12 +4,15 @@ Created on Jun 10, 2010
 @author: ilg
 '''
 import tempfile
+import os
+import exceptions
+import flickrapi.exceptions
 
 class Aggregate(object):
     '''
     classdocs
     '''
-    def __init__(self, flickr, sUrl, oWriter):
+    def __init__(self, flickr, sUrl, oWriter, bVerbose):
         '''
         Constructor
         '''
@@ -18,6 +21,7 @@ class Aggregate(object):
         self.fout = None
         self.writer = oWriter
         self.writer.setUserUrl(sUrl)
+        self.bVerbose = bVerbose
 
     def _photos(self, nPhotosViews):
         iPhotosPage = 0
@@ -317,13 +321,30 @@ class Aggregate(object):
             print 'different collections total views exp %d sum %d' % (nCollectionsViews, nCollectionsViewsSum)
         return 
     
-    def oneDay(self, sDay, sDir):
+    def oneDay(self, sDay, sFolder):
         """Aggregate one day of statistics"""
         # may trigger exceptions
         self.day = sDay
+        sFoutName = sFolder + '/' + sDay + '-flickr' + '.csv'
+        bExists = True
+        try:
+            oStat = os.stat(sFoutName)
+        except exceptions.OSError:
+            bExists = False
+        # if file exists, do nothing
+        if bExists:
+            if self.bVerbose:
+                print '[%s already in, %d KB]' % (self.day, oStat.st_size/1024)
+            return
         self.writer.setDate(sDay)
         # start with totals for the day
-        eRsp = self.flickr.stats_getTotalViews(date=sDay)
+        try:
+            eRsp = self.flickr.stats_getTotalViews(date=sDay)
+        except flickrapi.exceptions.FlickrError:
+            if self.bVerbose:
+                print '[no stats for day %s]' % self.day           
+            return # no stats for that date
+        #
         eStats = eRsp.find('stats')
         nViewsTotal = int(eStats.find('total').attrib['views'])
         nViewsPhotos = int(eStats.find('photos').attrib['views'])
@@ -331,31 +352,43 @@ class Aggregate(object):
         nViewsSets = int(eStats.find('sets').attrib['views'])
         nViewsCollections = int(eStats.find('collections').attrib['views'])
         self.writer.setDateStats(nViewsTotal, nViewsPhotos, nViewsPhotostream, nViewsSets, nViewsCollections)
-        print '[%s total %d]' % (self.day, nViewsTotal)
+        if self.bVerbose:
+            print '[%s total %d]' % (self.day, nViewsTotal)
         if nViewsTotal == 0:
             return  #no views for this day
         # create output file only if there is content
-        fout = tempfile.NamedTemporaryFile(mode='w', suffix='.csv', prefix=sDay + '-flickr-', dir=sDir, delete=False)
-        print fout.name
+        fout = tempfile.NamedTemporaryFile(mode='w', suffix='.csv', prefix=sDay + '-flickr-', dir=sFolder, delete=False)
+        sFoutTmpName = fout.name
+        if self.bVerbose:
+            print 'tmp file "%s"' % sFoutTmpName
         self.writer.setWriter(fout)
         #nViewsPhotos = 0
         if nViewsPhotos != 0:
-            print '[%s photos %d]' % (sDay, nViewsPhotos)
+            if self.bVerbose:
+                print '[%s photos %d]' % (sDay, nViewsPhotos)
             self._photos(nViewsPhotos)
         #nViewsPhotostream = 0
         if nViewsPhotostream != 0:
-            print '[%s photostream %d]' % (sDay, nViewsPhotostream)
+            if self.bVerbose:
+                print '[%s photostream %d]' % (sDay, nViewsPhotostream)
             self._photostream(nViewsPhotostream)
         #nViewsSets = 0
         if nViewsSets != 0:
-            print '[%s sets %d]' % (sDay, nViewsSets)
+            if self.bVerbose:
+                print '[%s sets %d]' % (sDay, nViewsSets)
             self._photoset(nViewsSets)
         #nViewsCollections = 0
         if nViewsCollections != 0:
-            print '[%s collections %d]' % (sDay, nViewsCollections)
+            if self.bVerbose:
+                print '[%s collections %d]' % (sDay, nViewsCollections)
             self._collection(nViewsCollections)
-        print fout.name
+        if self.bVerbose:
+            print 'tmp tile "%s"' % sFoutTmpName
         fout.close()
+        # if all's well, rename file
+        os.rename(sFoutTmpName, sFoutName)
+        if self.bVerbose:
+            print 'renamed as "%s"' % sFoutName
         return
     
      
