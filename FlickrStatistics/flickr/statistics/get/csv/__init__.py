@@ -21,7 +21,7 @@ Options:
         print this message
 
 Purpose:
-    Retrieve daily CSV statistics files for a Flickr account.
+    Retrieve daily CSV statistic files for a Flickr account.
 
 ---
 
@@ -65,7 +65,7 @@ api_secret = '4573a0d92f02730b'
 myMaxDay = 38   # Flickr says they keep 28 days, but I noticed to be longer
 myMinDay = 2    # at least 1, better 2
 
-myProgramVersion = '1.1.20100728'
+myProgramVersion = '1.1.20100807'
 # ---------------------------------------------------------------------
 def usage():
     print __doc__
@@ -103,7 +103,7 @@ def main(*argv):
         else:
             assert False, 'option not handled'
     # validate day argument
-    if sArgDay == None:
+    if sArgDay != None:
         try:
             time.strptime(sArgDay, '%Y-%m-%d')
         except ValueError as ex:
