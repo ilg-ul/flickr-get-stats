@@ -28,6 +28,11 @@ class WriterBase(object):
         self.sCollectionDescription = sDescription
         self.sCollectionSmallIcon = sSmallIcon
         self.sCollectionLargeIcon = sLargeIcon
+    
+    def setStatistics(self, nCollections, nSets, nPhotos):
+        self.nCollections = nCollections
+        self.nSets = nSets
+        self.nPhotos = nPhotos
         
     def setPhotoset(self, sID, sTitle, sDescription, nPhotos, sIcon):
         self.sPhotosetID = sID
