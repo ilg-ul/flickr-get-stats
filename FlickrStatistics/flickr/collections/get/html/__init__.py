@@ -38,6 +38,7 @@ import io
 from flickr.application.api import API
 from flickr.collections.get.html.writer import Writer
 from flickr.collections.get.aggregate import Aggregate
+from flickr.collections.get.tree import Tree
 
 myProgramVersion = '1.1.20100904'
 # ---------------------------------------------------------------------
@@ -99,26 +100,30 @@ def main(*argv):
     if bArgVerbose:
         print sUrl
     # create worker objects
-    writer = Writer()
-    writer.setWriter(fOut)
-    writer.setVerbose(bArgVerbose)
-    #aggregate = Aggregate(flickr, sUrl, writer, bArgVerbose)
-    aggregate = Aggregate(flickr, sUrl, writer, bArgVerbose)
-    nCollections = 0
-    nSets = 0
+    oWriter = Writer()
+    oWriter.setWriter(fOut)
+    oWriter.setUserUrl(sUrl)
+    oWriter.setVerbose(bArgVerbose)
+
+    oTree = Tree(flickr, sUrl, bArgVerbose)
+    oRoot = None
     try:
-        (nCollections, nSets, nPhotos) = aggregate.run(sArgOutput)         
+        oRoot = oTree.build()         
+        oAgregate = Aggregate(oRoot, oWriter, bArgVerbose)
+        oAgregate.run()
     except flickrapi.exceptions.FlickrError as ex:
         print 'FlickrError', ex
-    except:
-        print 'Other Exception', sys.exc_info()
     #
     fOut.close()
     #        
     if bArgVerbose:
         nEndTime = time.time()
         nDuration = nEndTime-nBeginSecs
-        print '[done, %d collection(s), %d set(s), %d photos, %d sec]' % (nCollections, nSets, nPhotos, nDuration)
+        if oRoot != None:
+            print '[done, %d collection(s), %d set(s), %d photos, %d sec]' % (oRoot.nCollections, oRoot.nSets, oRoot.nPhotos, nDuration)
+        else:
+            print '[done, %d sec]' % (nDuration)
+
     return 0
 
 if __name__ == '__main__':
