@@ -19,6 +19,9 @@ class WriterBase(object):
     def setVerbose(self, bVerbose):
         self.bVerbose = bVerbose
         
+    def setUserUrl(self, sUserUrl):
+        self.sUserUrl = sUserUrl
+        
     def setDate(self, sDate):
         self.sDate = sDate
         
@@ -31,9 +34,6 @@ class WriterBase(object):
         self.nCollections = nCollections
         pass
     
-    def setUserUrl(self, sUserUrl):
-        self.sUserUrl = sUserUrl
-        
     def clearAll(self):
         self.sID = None
         self.clearReferrerDomain()
