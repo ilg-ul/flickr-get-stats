@@ -3,8 +3,14 @@ Usage:
     python flickr.collections.get.html [options]
 
 Options:
+    -i "FILE", --input="FILE"
+        input pickle file
+        
+    --input=
+        default '$HOME/Documents/Flickr/Collections.pickle'
+
     -o "FILE", --output="FILE"
-        output file; default '$HOME/Documents/Flickr/Collections.html'
+        output html file; default '$HOME/Documents/Flickr/Collections.html'
         
     -v, --verbose
         print progress output
@@ -18,6 +24,9 @@ Options:
 Purpose:
     Iterate all collections from a Flickr account and generate a 
     html page.
+    
+    If the input file is specified, the program will use the local serialised 
+    file instead of Flickr (useful for testing).
 
 ---
 
@@ -39,6 +48,8 @@ from flickr.application.api import API
 from flickr.collections.get.html.writer import Writer
 from flickr.collections.get.aggregate import Aggregate
 from flickr.collections.get.tree import Tree
+from flickr.collections.get.html.tocwriter import TOCWriter
+import pickle
 
 myProgramVersion = '1.1.20100904'
 # ---------------------------------------------------------------------
@@ -47,18 +58,19 @@ def usage():
 
 def main(*argv):
     try:
-        opts, args = getopt.getopt(argv[1:], 'ho:vV', ['help', 'output=', 'verbose', 'version'])
+        opts, args = getopt.getopt(argv[1:], 'hi:o:vV', ['help', 'input=','output=', 'verbose', 'version'])
     except getopt.GetoptError as err:
         # print help information and exit:
         print str(err) # will print something like "option -a not recognized"
         usage()
         return 2
-    #
+
     if len(args) > 0:
         print 'unused arguments: ', args
         usage()
         return 2
-    #
+
+    sArgInput = None
     sArgOutput = None
     bArgVerbose = False
     for o, a in opts:
@@ -70,15 +82,22 @@ def main(*argv):
         elif o in ('-V', '--version'):
             print "version: " + myProgramVersion
             return 0
+        elif o in ('-i', '--input'):
+            if a != None and a != '':
+                sArgInput = a
+            else:
+                sArgInput = os.environ['HOME']
+                sArgInput += '/Documents/Flickr/Collections.pickle'
         elif o in ('-o', '--output'):
             sArgOutput = a
         else:
             assert False, 'option not handled'
+
     # output default
     if sArgOutput == None:
         sArgOutput = os.environ['HOME']
         sArgOutput += '/Documents/Flickr/Collections.html'
-    #
+
     sFolderName = os.path.dirname(sArgOutput)
     
     if not os.path.exists(sFolderName):
@@ -88,34 +107,52 @@ def main(*argv):
         return 2
 
     fOut = open(sArgOutput, 'w')
-    #
+
+    if sArgInput != None:
+        fIn = open(sArgInput, 'rb')
+    else:
+        fIn = None       
+
     api = API()
     flickr = api.authenticate()
-    #
+
     nBeginSecs = time.time()
-    #
+
     eRsp = flickr.urls_getUserPhotos()
     eUser = eRsp.find('user')
     sUrl = eUser.attrib.get('url')
     if bArgVerbose:
+        print sArgInput
+        print sArgOutput
         print sUrl
-    # create worker objects
-    oWriter = Writer()
-    oWriter.setWriter(fOut)
-    oWriter.setUserUrl(sUrl)
-    oWriter.setVerbose(bArgVerbose)
 
+    # create worker objects
+    oMainWriter = Writer()
+    oMainWriter.setWriter(fOut)
+    oMainWriter.setUserUrl(sUrl)
+    oMainWriter.setVerbose(bArgVerbose)
+
+    oTOCWriter = TOCWriter()
+    oTOCWriter.setWriter(fOut)
+    oTOCWriter.setUserUrl(sUrl)
+    oTOCWriter.setVerbose(bArgVerbose)
+
+    oWriters = [ oTOCWriter ]
+    
     oTree = Tree(flickr, sUrl, bArgVerbose)
     oRoot = None
     try:
-        oRoot = oTree.build()         
-        oAgregate = Aggregate(oRoot, oWriter, bArgVerbose)
+        if fIn == None:
+            oRoot = oTree.build()  
+        else:
+            oRoot = pickle.load(fIn)       
+        oAgregate = Aggregate(oRoot, oMainWriter, oWriters, bArgVerbose)
         oAgregate.run()
     except flickrapi.exceptions.FlickrError as ex:
         print 'FlickrError', ex
-    #
+
     fOut.close()
-    #        
+        
     if bArgVerbose:
         nEndTime = time.time()
         nDuration = nEndTime-nBeginSecs
