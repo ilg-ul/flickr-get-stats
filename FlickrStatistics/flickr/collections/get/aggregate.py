@@ -8,50 +8,69 @@ class Aggregate(object):
     '''
     classdocs
     '''
-    def __init__(self, oTree, oWriter, bVerbose):
+    def __init__(self, oTree, oMainWriter, oWriters, bVerbose):
         '''
         Constructor
         '''
         self.oTree = oTree
-        self.writer = oWriter
+        self.oMainWriter = oMainWriter
+        self.oWriters = oWriters
         self.bVerbose = bVerbose
 
     def run(self):
         if self.bVerbose:
-            print '----------'
-        self.writer.writeBegin()
-        self._recurse(self.oTree, 0)
-        self.writer.writeEnd()
+            print '----- Aggregate -----'
+        self.oMainWriter.writeHeaderBegin()
+        if self.oWriters != None:
+            for oWr in self.oWriters:
+                if self.bVerbose:
+                    print '----- %s -----' % (oWr.sName)
+                oWr.writeBegin()
+                oWr.setDepth(0)
+                self._recurse(self.oTree, oWr, '')
+                oWr.writeEnd()                
+
+        if self.bVerbose:
+            print '----- %s -----' % (self.oMainWriter.sName)
+        self.oMainWriter.writeBegin()
+        self.oMainWriter.setDepth(0)
+        self._recurse(self.oTree, self.oMainWriter, '')
+        self.oMainWriter.writeEnd()
+
+        self.oMainWriter.writeHeaderEnd()
         return
 
-    def _recurse(self, oCollection, depth):
-        sIndent = ''
-        for i in range(1, depth): #@UnusedVariable
-            sIndent += '\t'
-        
+    def _recurse(self, oCollection, oWriter, sHierarchicalDepth):
+        # skip special root note, used only for grouping
         if oCollection.sID != None:
             sCollectionID = oCollection.sID
             sTitle = oCollection.sTitle
             sDescription = oCollection.sDescription
             sIconSmall = oCollection.sIconSmall
             sIconLarge = oCollection.sIconLarge
-            self.writer.setCollection(sCollectionID, sTitle, sDescription, sIconSmall, sIconLarge)
-            #
+            oWriter.setCollection(sCollectionID, sTitle, sDescription, sIconSmall, sIconLarge)
+            oWriter.setHierarchicalDepth(sHierarchicalDepth)
+
             nCollections = oCollection.nCollections
             nSets = oCollection.nSets
             nPhotos = oCollection.nPhotos
-            self.writer.setStatistics(nCollections, nSets, nPhotos)
-            self.writer.writeCollectionBegin()
-            #
-            if self.bVerbose:
-                print '%s%d Collection "%s" "%s" %s %d %d %d' % (sIndent, depth, sTitle, sDescription, sIconSmall, nCollections, nSets, nPhotos)
-        #
+            oWriter.setStatistics(nCollections, nSets, nPhotos)
+            oWriter.writeCollectionBegin()
+
         if len(oCollection.oMembers) > 0:
             if oCollection.sID != None:
-                self.writer.writeEmbeddedBegin()
+                oWriter.writeEmbeddedBegin()
             if oCollection.bChildCollections:
+                i = 0
                 for oColl in oCollection.oMembers:
-                    self._recurse(oColl, depth+1)
+                    oWriter.incDepth()
+                    i += 1
+                    if sHierarchicalDepth == '':
+                        sH = '%d' % i
+                    else:
+                        sH = '%s.%d' % (sHierarchicalDepth, i)
+                    self._recurse(oColl, oWriter, sH)
+                    oWriter.decDepth()
             else:
                 for oSet in oCollection.oMembers:
                     sPhotosetID = oSet.sID
@@ -60,19 +79,16 @@ class Aggregate(object):
                     sIcon = oSet.sIcon
                     nPhotos = oSet.nPhotos
                     #
-                    self.writer.setPhotoset(sPhotosetID, sTitle, sDescription, nPhotos, sIcon)
-                    self.writer.writePhotosetBegin()
-                    self.writer.writePhotosetEnd()
-                    #
-                    if self.bVerbose:
-                        print '%s\tSet "%s" "%s" %s %d' % (sIndent, sTitle, sDescription, sIcon, nPhotos)
+                    oWriter.setPhotoset(sPhotosetID, sTitle, sDescription, nPhotos, sIcon)
+                    oWriter.writePhotosetBegin()
+                    oWriter.writePhotosetEnd()
                 # end of for
             # end of if
             if oCollection.sID != None:
-                self.writer.writeEmbeddedEnd()
+                oWriter.writeEmbeddedEnd()
         # end of if len()
         if oCollection.sID != None:
-            self.writer.writeCollectionEnd()
+            oWriter.writeCollectionEnd()
 
         return
-    
+
