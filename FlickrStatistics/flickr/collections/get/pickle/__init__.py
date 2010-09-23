@@ -55,12 +55,12 @@ def main(*argv):
         print str(err) # will print something like "option -a not recognized"
         usage()
         return 2
-    #
+
     if len(args) > 0:
         print 'unused arguments: ', args
         usage()
         return 2
-    #
+
     sArgOutput = None
     bArgVerbose = False
     for o, a in opts:
@@ -80,7 +80,7 @@ def main(*argv):
     if sArgOutput == None:
         sArgOutput = os.environ['HOME']
         sArgOutput += '/Documents/Flickr/Collections.pickle'
-    #
+
     sFolderName = os.path.dirname(sArgOutput)
     
     if not os.path.exists(sFolderName):
@@ -90,33 +90,29 @@ def main(*argv):
         return 2
 
     fOut = open(sArgOutput, 'wb')
-    #
+
     api = API()
     flickr = api.authenticate()
-    #
+
     nBeginSecs = time.time()
-    #
-    eRsp = flickr.urls_getUserPhotos()
-    eUser = eRsp.find('user')
-    sUrl = eUser.attrib.get('url')
+
     if bArgVerbose:
-        print sUrl
         print sArgOutput
     # create worker objects    
-    oTree = Tree(flickr, sUrl, bArgVerbose)
+    oTree = Tree(bArgVerbose)
     oRoot = None
     try:
-        oRoot = oTree.build()
+        oRoot = oTree.build(flickr)
         if bArgVerbose:
             print 'serialising... '
-        pickle.dump(oRoot, fOut, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(oTree, fOut, pickle.HIGHEST_PROTOCOL)
         if bArgVerbose:
             print 'done'
     except flickrapi.exceptions.FlickrError as ex:
         print 'FlickrError', ex
-    #
+
     fOut.close()
-    #        
+
     if bArgVerbose:
         nEndTime = time.time()
         nDuration = nEndTime-nBeginSecs
