@@ -8,20 +8,20 @@ class Collection(object):
     '''
     classdocs
     '''
-    def __init__(self, sID, sTitle, sDescription, sSmallIcon, sLargeIcon):
+    def __init__(self, sID, sTitle, sDescription, sIconSmallUrl, sIconLargeUrl):
         '''
         Constructor
         '''
         self.sID = sID
         self.sTitle = sTitle
         self.sDescription = sDescription
-        self.sIconSmall = sSmallIcon
-        self.sIconLarge = sLargeIcon
+        self.sIconSmallUrl = sIconSmallUrl
+        self.sIconLargeUrl = sIconLargeUrl
         self.oMembers = []
         self.nCollections = 0
         self.nSets = 0
         self.nPhotos = 0
-        self.bChildCollections = True
+        self.bHasChildCollections = False
         
     def setStatistics(self, nCollections, nSets, nPhotos):
         self.nCollections = nCollections
@@ -30,4 +30,8 @@ class Collection(object):
 
     def addMember(self, oMember):
         self.oMembers.append(oMember)
+        
+    def setHasChildCollections(self, bFlag):
+        self.bHasChildCollections = bFlag
+
         

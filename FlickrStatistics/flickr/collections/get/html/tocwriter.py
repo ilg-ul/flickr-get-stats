@@ -31,7 +31,13 @@ class TOCWriter(WriterBase):
     def writeCollectionBegin(self):
         if self.bVerbose:
             print '%s%s Collection "%s"' % (self.sIndent, self.sHierarchicalDepth, self.sCollectionTitle)
-        self.fOut.write('  <li class="f_toc_lvl%d"><a href="#%s"><span class="f_toc_num">%s</span><span class="f_toc_txt">%s</span></a>\n' % (self.nDepth, self.sCollectionID, self.sHierarchicalDepth, self.sCollectionTitle))
+        self.fOut.write('  <li class="f_toc_lvl%d"><a href="#C%s"><span class="f_toc_num">%s</span><span class="f_toc_txt">%s</span></a>\n' % (self.nDepth, self.sCollectionID, self.sHierarchicalDepth, self.sCollectionTitle))
+        return
+
+    def writePhotosetBegin(self):
+        if self.bVerbose:
+            print '%s%s Set "%s"' % (self.sIndent, self.sHierarchicalDepth, self.sPhotosetTitle)
+        self.fOut.write('  <li class="f_toc_lvl%d"><a href="#A%s"><span class="f_toc_num">%s</span><span class="f_toc_txt">%s</span></a>\n' % (self.nDepth, self.sPhotosetID, self.sHierarchicalDepth, self.sPhotosetTitle))
         return
 
     def writeEmbeddedBegin(self):

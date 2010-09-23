@@ -4,46 +4,55 @@ Created on Sep 3, 2010
 @author: ilg
 '''
 from flickr.collections.get.collection import Collection
+from flickr.collections.get.set import Set
 
 class Tree(object):
     '''
     classdocs
     '''
-    def __init__(self, flickr, sUrl, bVerbose):
+    def __init__(self, bVerbose):
         '''
         Constructor
         '''
-        self.flickr = flickr
-        self.sUrl = sUrl
         self.bVerbose = bVerbose
         self.oRoot = Collection(None, None, None, None, None)
 
     def getRoot(self):
         return self.oRoot
     
-    def build(self):
-        eRsp = self.flickr.collections_getTree()
+    def getUserUrl(self):
+        return self.sUrl
+    
+    def build(self, flickr):
+        eRsp = flickr.urls_getUserPhotos()
+        eUser = eRsp.find('user')
+        self.sUrl = eUser.attrib.get('url')
+        if self.bVerbose:
+            print self.sUrl
+
+        eRsp = flickr.collections_getTree()
         eCollections = eRsp.find('collections')
         nCollectionsSum = 0
         nPhotosetsSum = 0
         nPhotosSum = 0
         for eCollection in eCollections.findall('collection'):
-            (nC, nS, nP) = self._recurse(eCollection, 1, self.oRoot)
+            (nC, nS, nP) = self._recurse(flickr, eCollection, 1, self.oRoot)
             nCollectionsSum += nC
             nPhotosetsSum += nS
             nPhotosSum += nP
         self.oRoot.setStatistics(nCollectionsSum, nPhotosetsSum, nPhotosSum)
         return self.oRoot
 
-    def _recurse(self, eCollections, depth, oCollection):
+    def _recurse(self, flickr, eCollections, depth, oCollection):
         nCollectionsRunningSum = 0
         nPhotosetsRunningSum = 0
         nPhotosRunningSum = 0
         sIndent = ''
         for i in range(1, depth): #@UnusedVariable
             sIndent += '\t'
-        
+
         if eCollections.tag == 'collection':
+            oCollection.setHasChildCollections(True)
             sCollectionID = eCollections.attrib.get('id')
             sCollectionID = sCollectionID.split('-')[1] # skip user ID part
             #self.writer.clearAll()
@@ -51,16 +60,17 @@ class Tree(object):
             sDescription = eCollections.attrib.get('description')
             sIconSmall = eCollections.attrib.get('iconsmall')
             sIconLarge = eCollections.attrib.get('iconlarge')
+
             oNewCollection = Collection(sCollectionID, sTitle, sDescription, sIconSmall, sIconLarge)
             oCollection.addMember(oNewCollection)
             nCollectionsRunningSum += 1
-            #
+
             if self.bVerbose:
                 print '%s%d Collection "%s" "%s" %s' % (sIndent, depth, sTitle, sDescription, sIconSmall)
 
             if eCollections.find('collection') != None:
                 for eCollection in eCollections.findall('collection'):
-                    (nC, nS, nP) = self._recurse(eCollection, depth+1, oNewCollection)
+                    (nC, nS, nP) = self._recurse(flickr, eCollection, depth+1, oNewCollection)
                     nCollectionsRunningSum += nC
                     nPhotosetsRunningSum += nS
                     nPhotosRunningSum += nP
@@ -71,13 +81,13 @@ class Tree(object):
                         sTitle = ePhotoset.attrib.get('title')
                         sDescription = ePhotoset.attrib.get('description')
                         #
-                        eRsp = self.flickr.photosets_getInfo(photoset_id=sPhotosetID);
+                        eRsp = flickr.photosets_getInfo(photoset_id=sPhotosetID);
                         ePhotosetInfo = eRsp.find('photoset')
                         sPrimaryPhotoID = ePhotosetInfo.attrib.get('primary')
                         sPhotos = ePhotosetInfo.attrib.get('photos')
                         nPhotos = int(sPhotos)
                         #
-                        eRsp = self.flickr.photos_getSizes(photo_id=sPrimaryPhotoID);
+                        eRsp = flickr.photos_getSizes(photo_id=sPrimaryPhotoID);
                         eSizes = eRsp.find('sizes')
                         sIcon = None
                         for eSize in eSizes.findall('size'):
@@ -87,11 +97,14 @@ class Tree(object):
                                 break
                         if sIcon == None:
                             print 'No icon found for photo %s' % sPhotosetID
-                        #
-                        #self.writer.setPhotoset(sPhotosetID, sTitle, sDescription, nPhotos, sIcon)
+
                         nPhotosetsRunningSum += 1
                         nPhotosRunningSum += nPhotos
-                        #
+
+                        oNewSet = Set(sPhotosetID, sTitle, sDescription, sIcon)
+                        oNewSet.setStatistics(nPhotos)
+                        oNewCollection.addMember(oNewSet)
+                        
                         if self.bVerbose:
                             print '%s\tSet "%s" "%s" %s %s' % (sIndent, sTitle, sDescription, sIcon, sPhotos)
                     # end of for

@@ -9,8 +9,13 @@ Options:
     --input=
         default '$HOME/Documents/Flickr/Collections.pickle'
 
+    -f "FOLDER", --folder="FOLDER"
+        output folder, where html files are stored;
+        default is '$HOME/Documents/Flickr/Collections/'
+        
     -o "FILE", --output="FILE"
         output html file; default '$HOME/Documents/Flickr/Collections.html'
+        (ignored is --folder= was also used)
         
     -v, --verbose
         print progress output
@@ -57,6 +62,9 @@ def usage():
     print __doc__
 
 def main(*argv):
+    
+    api = API()
+
     try:
         opts, args = getopt.getopt(argv[1:], 'hi:o:vV', ['help', 'input=','output=', 'verbose', 'version'])
     except getopt.GetoptError as err:
@@ -72,6 +80,7 @@ def main(*argv):
 
     sArgInput = None
     sArgOutput = None
+    sArgFolder = None
     bArgVerbose = False
     for o, a in opts:
         if o in ('-v', '--verbose'):
@@ -80,79 +89,84 @@ def main(*argv):
             usage()
             return 0
         elif o in ('-V', '--version'):
-            print "version: " + myProgramVersion
+            print "version: " + api.getProgramVersion()
             return 0
         elif o in ('-i', '--input'):
             if a != None and a != '':
                 sArgInput = a
             else:
-                sArgInput = os.environ['HOME']
+                sArgInput = api.getUserHome()
                 sArgInput += '/Documents/Flickr/Collections.pickle'
+        elif o in ('-f', '--folder'):
+            sArgFolder = a
         elif o in ('-o', '--output'):
-            sArgOutput = a
+            if a != '':
+                sArgOutput = a
         else:
             assert False, 'option not handled'
 
-    # output default
-    if sArgOutput == None:
-        sArgOutput = os.environ['HOME']
-        sArgOutput += '/Documents/Flickr/Collections.html'
+    if sArgFolder == None and sArgOutput == None:
+        sArgFolder = api.getUserHome()
+        sArgFolder += '/Documents/Flickr/Collections/'
 
-    sFolderName = os.path.dirname(sArgOutput)
-    
-    if not os.path.exists(sFolderName):
-        os.makedirs(sFolderName)
-    elif not os.path.isdir(sFolderName):
-        print 'not a folder'
-        return 2
-
-    fOut = open(sArgOutput, 'w')
-
-    if sArgInput != None:
-        fIn = open(sArgInput, 'rb')
+    if sArgFolder != None:
+        if not os.path.exists(sArgFolder):
+            os.makedirs(sArgFolder)
+        elif not os.path.isdir(sArgFolder):
+            print 'not a folder'
+            return 2
+        if bArgVerbose:
+            print sArgFolder
     else:
-        fIn = None       
+        # output default
+        if sArgOutput == None:
+            sArgOutput = api.getUserHome()
+            sArgOutput += '/Documents/Flickr/Collections.html'
 
-    api = API()
-    flickr = api.authenticate()
+        sFolderName = os.path.dirname(sArgOutput)
+
+        if not os.path.exists(sFolderName):
+            os.makedirs(sFolderName)
+        elif not os.path.isdir(sFolderName):
+            print 'not a folder'
+            return 2
+        if bArgVerbose:
+            print sArgOutput
+
+    if sArgInput == None:
+        fIn = None       
+    else:
+        fIn = open(sArgInput, 'rb')
+        if bArgVerbose:
+            print sArgInput
 
     nBeginSecs = time.time()
 
-    eRsp = flickr.urls_getUserPhotos()
-    eUser = eRsp.find('user')
-    sUrl = eUser.attrib.get('url')
-    if bArgVerbose:
-        print sArgInput
-        print sArgOutput
-        print sUrl
-
     # create worker objects
     oMainWriter = Writer()
-    oMainWriter.setWriter(fOut)
-    oMainWriter.setUserUrl(sUrl)
-    oMainWriter.setVerbose(bArgVerbose)
-
     oTOCWriter = TOCWriter()
-    oTOCWriter.setWriter(fOut)
-    oTOCWriter.setUserUrl(sUrl)
-    oTOCWriter.setVerbose(bArgVerbose)
-
     oWriters = [ oTOCWriter ]
     
-    oTree = Tree(flickr, sUrl, bArgVerbose)
     oRoot = None
+    nMainRet = 0
     try:
         if fIn == None:
+            flickr = api.authenticate()
+
+            oTree = Tree(flickr, bArgVerbose)
             oRoot = oTree.build()  
         else:
-            oRoot = pickle.load(fIn)       
-        oAgregate = Aggregate(oRoot, oMainWriter, oWriters, bArgVerbose)
-        oAgregate.run()
+            oTree = pickle.load(fIn)
+            oRoot = oTree.getRoot()
+                   
+        oAgregate = Aggregate(oTree, oMainWriter, oWriters, bArgVerbose)
+        if sArgFolder != None:
+            nMainRet = oAgregate.runMulti(sArgFolder)
+        else:
+            oAgregate.runSingle(sArgOutput)
     except flickrapi.exceptions.FlickrError as ex:
         print 'FlickrError', ex
 
-    fOut.close()
-        
     if bArgVerbose:
         nEndTime = time.time()
         nDuration = nEndTime-nBeginSecs
@@ -161,7 +175,7 @@ def main(*argv):
         else:
             print '[done, %d sec]' % (nDuration)
 
-    return 0
+    return nMainRet
 
 if __name__ == '__main__':
     sys.exit(main(*sys.argv))
