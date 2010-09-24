@@ -361,7 +361,7 @@ class Aggregate(object):
         sFoutTmpName = fout.name
         if self.bVerbose:
             print 'tmp file "%s"' % sFoutTmpName
-        self.writer.setWriter(fout)
+        self.writer.setOutputStream(fout)
         #nViewsPhotos = 0
         if nViewsPhotos != 0:
             if self.bVerbose:
