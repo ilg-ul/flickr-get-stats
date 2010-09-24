@@ -55,8 +55,8 @@ from flickr.collections.get.aggregate import Aggregate
 from flickr.collections.get.tree import Tree
 from flickr.collections.get.html.tocwriter import TOCWriter
 import pickle
+from flickr.collections.get.html.writerhdr import WriterWithHeader
 
-myProgramVersion = '1.1.20100904'
 # ---------------------------------------------------------------------
 def usage():
     print __doc__
@@ -143,7 +143,7 @@ def main(*argv):
     nBeginSecs = time.time()
 
     # create worker objects
-    oMainWriter = Writer()
+    oMainWriter = WriterWithHeader()
     oTOCWriter = TOCWriter()
     oWriters = [ oTOCWriter ]
     
@@ -163,7 +163,11 @@ def main(*argv):
         if sArgFolder != None:
             nMainRet = oAgregate.runMulti(sArgFolder)
         else:
-            oAgregate.runSingle(sArgOutput)
+            
+            oOutStream = open(sArgOutput, 'w')
+            oAgregate.runSingle(oOutStream)
+            oOutStream.close()
+            
     except flickrapi.exceptions.FlickrError as ex:
         print 'FlickrError', ex
 
