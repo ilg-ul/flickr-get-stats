@@ -12,32 +12,16 @@ class Writer(WriterBase):
     classdocs
     '''
 
-    def __init__(self):
+    def __init__(self, sDescription='Main'):
         '''
         Constructor
         '''
-        super(Writer, self).__init__('Main')
+        super(Writer, self).__init__(sDescription)
 
-    def writeHeaderBegin(self):
-        self.fOut.write('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">\n')
-        self.fOut.write('<html>\n')
-        self.fOut.write('<head>\n')
-        self.fOut.write('  <title>Flickr: ilg-ul Photos</title>\n')
-        self.fOut.write('  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">\n')
-        self.fOut.write('  <link type="text/css" rel="stylesheet" href="flickr.css">\n')
-        self.fOut.write('</head>\n')
-        self.fOut.write('<body>\n')
-        return
-    
-    def writeHeaderEnd(self):
-        self.fOut.write('</body>\n')
-        self.fOut.write('</html>\n')
-        return
-    
     def writeBegin(self, s):
         if s == None:
             s = 'Collections'
-        self.fOut.write('<h3>%s</h3>\n' % s)
+        self.oOutStream.write(u'<h3>%s</h3>\n' % s)
         return
 
     def writeEnd(self):
@@ -62,62 +46,62 @@ class Writer(WriterBase):
         if self.bVerbose:
             print '%s%d Collection "%s" "%s" %s %d %d %d' % (self.sIndent, self.nDepth, self.sCollectionTitle, self.sCollectionDescription, self.sCollectionSmallIcon, self.nCollections, self.nSets, self.nPhotos)
         if bUseTables:
-            #self.fOut.write('<a name="C%s"> </a>' % (self.sCollectionID))
-            self.fOut.write('<table class="f_coll">\n')
-            self.fOut.write('  <tr class="f_coll_r1">\n')
-            self.fOut.write('    <td class="f_coll_icon">\n')
-            self.fOut.write('      <div class="f_coll_icon">%s%s</a></div>\n' % (self._computeCollectionRef(), self._computeCollectionImg()))
-            self.fOut.write('    </td>\n')
-            self.fOut.write('    <td class="f_coll_info">\n')
-            self.fOut.write('      <div class="f_coll_info">\n')
-            self.fOut.write('        <h4><a name="C%s">%s</a></h4>\n' % (self.sCollectionID, self.sCollectionTitle))
-            self.fOut.write('        <div class="f_coll_stat">%s</div>\n' % (self._computeCollectionStats()))
-            self.fOut.write('        <div class="f_coll_desc">%s</div>\n' % (self.sCollectionDescription))
-            self.fOut.write('      </div>\n')
-            self.fOut.write('    </td>\n')
-            self.fOut.write('  </tr>\n')
+            #self.oOutStream.write('<a name="C%s"> </a>' % (self.sCollectionID))
+            self.oOutStream.write(u'<table class="f_coll">\n')
+            self.oOutStream.write(u'  <tr class="f_coll_r1">\n')
+            self.oOutStream.write(u'    <td class="f_coll_icon">\n')
+            self.oOutStream.write(u'      <div class="f_coll_icon">%s%s</a></div>\n' % (self._computeCollectionRef(), self._computeCollectionImg()))
+            self.oOutStream.write(u'    </td>\n')
+            self.oOutStream.write(u'    <td class="f_coll_info">\n')
+            self.oOutStream.write(u'      <div class="f_coll_info">\n')
+            self.oOutStream.write(u'        <h4><a name="C%s">%s</a></h4>\n' % (self.sCollectionID, self.sCollectionTitle))
+            self.oOutStream.write(u'        <div class="f_coll_stat">%s</div>\n' % (self._computeCollectionStats()))
+            self.oOutStream.write(u'        <div class="f_coll_desc">%s</div>\n' % (self.sCollectionDescription))
+            self.oOutStream.write(u'      </div>\n')
+            self.oOutStream.write(u'    </td>\n')
+            self.oOutStream.write(u'  </tr>\n')
         else:
-            self.fOut.write('<div class="f_coll">\n')
-            self.fOut.write('  <div class="f_coll_r1">\n')
-            self.fOut.write('    <div class="f_coll_icon">\n')
-            self.fOut.write('      <div class="f_coll_icon">%s%s</a></div>\n' % (self._computeCollectionRef(), self._computeCollectionImg()))
-            self.fOut.write('    </div>\n')
-            self.fOut.write('    <div class="f_coll_info">\n')
-            self.fOut.write('      <h4>%s</h4>\n' % (self.sCollectionTitle))
-            self.fOut.write('      <div class="f_coll_stat">%s</div>\n' % (self._computeCollectionStats()))
-            self.fOut.write('      <div class="f_coll_desc">%s</div>\n' % (self.sCollectionDescription))
-            self.fOut.write('    </div>\n')
-            self.fOut.write('  </div>\n')
+            self.oOutStream.write('<div class="f_coll">\n')
+            self.oOutStream.write('  <div class="f_coll_r1">\n')
+            self.oOutStream.write('    <div class="f_coll_icon">\n')
+            self.oOutStream.write('      <div class="f_coll_icon">%s%s</a></div>\n' % (self._computeCollectionRef(), self._computeCollectionImg()))
+            self.oOutStream.write('    </div>\n')
+            self.oOutStream.write('    <div class="f_coll_info">\n')
+            self.oOutStream.write('      <h4>%s</h4>\n' % (self.sCollectionTitle))
+            self.oOutStream.write('      <div class="f_coll_stat">%s</div>\n' % (self._computeCollectionStats()))
+            self.oOutStream.write('      <div class="f_coll_desc">%s</div>\n' % (self.sCollectionDescription))
+            self.oOutStream.write('    </div>\n')
+            self.oOutStream.write('  </div>\n')
         return
 
     def writeEmbeddedBegin(self):
         if bUseTables:
-            self.fOut.write('  <tr class="f_coll_r2">\n')
-            self.fOut.write('    <td class="f_coll_space">\n')
-            self.fOut.write('    </td>\n')
-            self.fOut.write('    <td class="f_coll_content">\n')
+            self.oOutStream.write(u'  <tr class="f_coll_r2">\n')
+            self.oOutStream.write(u'    <td class="f_coll_space">\n')
+            self.oOutStream.write(u'    </td>\n')
+            self.oOutStream.write(u'    <td class="f_coll_content">\n')
         else:
-            self.fOut.write('  <div class="f_coll_r2">\n')
-            self.fOut.write('    <div class="f_coll_space">\n')
-            self.fOut.write('    </div>\n')
-            self.fOut.write('    <div class="f_coll_content">\n')
+            self.oOutStream.write('  <div class="f_coll_r2">\n')
+            self.oOutStream.write('    <div class="f_coll_space">\n')
+            self.oOutStream.write('    </div>\n')
+            self.oOutStream.write('    <div class="f_coll_content">\n')
         return
 
     def writeEmbeddedEnd(self):
         if bUseTables:
-            self.fOut.write('    </td>\n')
-            self.fOut.write('  </tr>\n')
+            self.oOutStream.write(u'    </td>\n')
+            self.oOutStream.write(u'  </tr>\n')
         else:
-            self.fOut.write('    </div>\n')
-            self.fOut.write('  </div>\n')
+            self.oOutStream.write('    </div>\n')
+            self.oOutStream.write('  </div>\n')
         return
 
     
     def writeCollectionEnd(self):
         if bUseTables:
-            self.fOut.write('</table>\n')
+            self.oOutStream.write(u'</table>\n')
         else:
-            self.fOut.write('</div>\n')
+            self.oOutStream.write('</div>\n')
         return
 
     def _computePhotosetRef(self, sType):
@@ -145,39 +129,39 @@ class Writer(WriterBase):
         if self.bVerbose:
             print '%s\tSet "%s" "%s" %s %d' % (self.sIndent, self.sPhotosetTitle, self.sPhotosetDescription, self.sPhotosetIcon, self.nPhotosetPhotos)
         if bUseTables:
-            #self.fOut.write('<a name="A%s"> </a>' % (self.sPhotosetID))
-            self.fOut.write('<table class="f_set">\n')
-            self.fOut.write('  <tr>\n')
-            self.fOut.write('    <td class="f_set_icon">\n')
-            self.fOut.write('      <div class="f_set_icon">%s%s</a></div>\n' % (self._computePhotosetRef('show'), self._computePhotosetImg()))
-            self.fOut.write('    </td>\n')
-            self.fOut.write('    <td class="f_set_info">\n')
-            self.fOut.write('      <div class="f_set_info">\n')
-            self.fOut.write('        <h4><a name="A%s">%s</a></h4>\n' % (self.sPhotosetID, self.sPhotosetTitle))
-            self.fOut.write('        <div class="f_set_stat">%d photos</div>\n' % (self.nPhotosetPhotos))
-            self.fOut.write('        <div class="f_set_links">')
-            self.fOut.write('%s' % (self._computePhotosetLink('Slideshow', 'show')))
-            self.fOut.write('%s' % (self._computePhotosetLink('Thumbnails', 'thumb')))
-            self.fOut.write('%s' % (self._computePhotosetLink('Details', 'detail')))
-            self.fOut.write('%s' % (self._computePhotosetLink('Map', 'map')))
-            self.fOut.write('</div></div>\n')
-            self.fOut.write('      <div class="f_set_desc">%s</div>\n' % (self.sPhotosetDescription))
-            self.fOut.write('    </td>\n')
-            self.fOut.write('  </tr>\n')
-            self.fOut.write('</table>\n')
+            #self.oOutStream.write('<a name="A%s"> </a>' % (self.sPhotosetID))
+            self.oOutStream.write(u'<table class="f_set">\n')
+            self.oOutStream.write(u'  <tr>\n')
+            self.oOutStream.write(u'    <td class="f_set_icon">\n')
+            self.oOutStream.write(u'      <div class="f_set_icon">%s%s</a></div>\n' % (self._computePhotosetRef('show'), self._computePhotosetImg()))
+            self.oOutStream.write(u'    </td>\n')
+            self.oOutStream.write(u'    <td class="f_set_info">\n')
+            self.oOutStream.write(u'      <div class="f_set_info">\n')
+            self.oOutStream.write(u'        <h4><a name="A%s">%s</a></h4>\n' % (self.sPhotosetID, self.sPhotosetTitle))
+            self.oOutStream.write(u'        <div class="f_set_stat">%d photos</div>\n' % (self.nPhotosetPhotos))
+            self.oOutStream.write(u'        <div class="f_set_links">')
+            self.oOutStream.write(u'%s' % (self._computePhotosetLink('Slideshow', 'show')))
+            self.oOutStream.write(u'%s' % (self._computePhotosetLink('Thumbnails', 'thumb')))
+            self.oOutStream.write(u'%s' % (self._computePhotosetLink('Details', 'detail')))
+            self.oOutStream.write(u'%s' % (self._computePhotosetLink('Map', 'map')))
+            self.oOutStream.write(u'</div></div>\n')
+            self.oOutStream.write(u'      <div class="f_set_desc">%s</div>\n' % (self.sPhotosetDescription))
+            self.oOutStream.write(u'    </td>\n')
+            self.oOutStream.write(u'  </tr>\n')
+            self.oOutStream.write(u'</table>\n')
         else:
-            self.fOut.write('<div class="f_set">\n')
-            self.fOut.write('  <div class="f_set_icon">\n')
-            self.fOut.write('    %s\n' % (self._computePhotosetRef(None)))
-            self.fOut.write('    %s\n' % (self._computePhotosetImg()))
-            self.fOut.write('    </a>\n')
-            self.fOut.write('  </div>\n')
-            self.fOut.write('  <div class="f_set_info">\n')
-            self.fOut.write('    <p>%s (%s photos)</p>\n' % (self.sPhotosetTitle, self.sPhotosetPhotos))
-            self.fOut.write('    <p>%sSlideshow</a> %sThumbnails</a> %sDetails</a> %sMap</a></p>\n' % (self._computePhotosetRef('show'), self._computePhotosetRef(None), self._computePhotosetRef('detail'), self._computePhotosetRef('map')))
-            self.fOut.write('    <p>%s</p>\n' % (self.sPhotosetDescription))
-            self.fOut.write('  </div>\n')
-            self.fOut.write('</div>\n')
+            self.oOutStream.write('<div class="f_set">\n')
+            self.oOutStream.write('  <div class="f_set_icon">\n')
+            self.oOutStream.write('    %s\n' % (self._computePhotosetRef(None)))
+            self.oOutStream.write('    %s\n' % (self._computePhotosetImg()))
+            self.oOutStream.write('    </a>\n')
+            self.oOutStream.write('  </div>\n')
+            self.oOutStream.write('  <div class="f_set_info">\n')
+            self.oOutStream.write('    <p>%s (%s photos)</p>\n' % (self.sPhotosetTitle, self.sPhotosetPhotos))
+            self.oOutStream.write('    <p>%sSlideshow</a> %sThumbnails</a> %sDetails</a> %sMap</a></p>\n' % (self._computePhotosetRef('show'), self._computePhotosetRef(None), self._computePhotosetRef('detail'), self._computePhotosetRef('map')))
+            self.oOutStream.write('    <p>%s</p>\n' % (self.sPhotosetDescription))
+            self.oOutStream.write('  </div>\n')
+            self.oOutStream.write('</div>\n')
         return
     
     def writePhotosetEnd(self):
