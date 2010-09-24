@@ -23,8 +23,8 @@ class WriterBase(object):
     def setUserUrl(self, sUserUrl):
         self.sUserUrl = sUserUrl
 
-    def setWriter(self, fOut):
-        self.fOut = fOut
+    def setOutputStream(self, oOutStream):
+        self.oOutStream = oOutStream
 
     def setHierarchicalDepth(self, s):
         self.sHierarchicalDepth = s
@@ -64,6 +64,12 @@ class WriterBase(object):
         return
 
     def writeEnd(self):
+        return
+
+    def writeHeaderBegin(self):
+        return
+
+    def writeHeaderEnd(self):
         return
 
     def writeCollectionBegin(self):
