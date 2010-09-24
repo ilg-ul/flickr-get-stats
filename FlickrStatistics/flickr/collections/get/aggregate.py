@@ -18,7 +18,7 @@ class Aggregate(object):
         self.oWriters = oWriters
         self.bVerbose = bVerbose
 
-    def runSingle(self, sFileName):
+    def runSingle(self, oOutStream):
         if self.bVerbose:
             print '----- Aggregate -----'
         
@@ -29,11 +29,7 @@ class Aggregate(object):
             oWr.setUserUrl(self.oTree.getUserUrl())
             oWr.setVerbose(self.bVerbose)
 
-        fOut = open(sFileName, 'w')
-
-        self._oneFile(self.oTree.getRoot(), fOut)
-
-        fOut.close()
+        self._oneFile(self.oTree.getRoot(), False, oOutStream)
 
         return
 
@@ -51,10 +47,10 @@ class Aggregate(object):
         oRoot = self.oTree.getRoot()
         
         sFileName = sFolderName+'index.html'
-        fOut = open(sFileName, 'w')
+        oOutStream = open(sFileName, 'w')
         # do not output sets for index page
-        self._oneFile(oRoot, False, fOut)   
-        fOut.close()
+        self._oneFile(oRoot, False, oOutStream)   
+        oOutStream.close()
         
         for oCol in oRoot.oMembers:
             print '----- Aggregate %s -----' % oCol.sTitle
@@ -69,16 +65,16 @@ class Aggregate(object):
                 return 2
             
             sFileName = sFN+'/index.html'
-            fOut = open(sFileName, 'w')
+            oOutStream = open(sFileName, 'w')
             # called for each first level collection
             # output sets for all other detail pages
-            self._oneFile(oCol, True, fOut)
-            fOut.close()
+            self._oneFile(oCol, True, oOutStream)
+            oOutStream.close()
 
         return 0
 
-    def _oneFile(self, oRoot, bOutputSets, fOut):
-        self.oMainWriter.setWriter(fOut)
+    def _oneFile(self, oRoot, bOutputSets, oOutStream):
+        self.oMainWriter.setOutputStream(oOutStream)
         self.oMainWriter.writeHeaderBegin()
 
         # currently only one writer, for TOC
@@ -86,7 +82,7 @@ class Aggregate(object):
             for oWr in self.oWriters:
                 if self.bVerbose:
                     print '----- %s -----' % (oWr.sName)
-                oWr.setWriter(fOut)
+                oWr.setOutputStream(oOutStream)
                 oWr.writeBegin()
                 oWr.setDepth(0)
                 self._recurse(oRoot, '', bOutputSets, oWr)
