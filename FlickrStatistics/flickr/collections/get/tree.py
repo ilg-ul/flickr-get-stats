@@ -36,14 +36,14 @@ class Tree(object):
         nPhotosetsSum = 0
         nPhotosSum = 0
         for eCollection in eCollections.findall('collection'):
-            (nC, nS, nP) = self._recurse(flickr, eCollection, 1, self.oRoot)
+            (nC, nS, nP) = self._recurseBuild(flickr, eCollection, 1, self.oRoot)
             nCollectionsSum += nC
             nPhotosetsSum += nS
             nPhotosSum += nP
         self.oRoot.setStatistics(nCollectionsSum, nPhotosetsSum, nPhotosSum)
         return self.oRoot
 
-    def _recurse(self, flickr, eCollections, depth, oCollection):
+    def _recurseBuild(self, flickr, eCollections, depth, oCollection):
         nCollectionsRunningSum = 0
         nPhotosetsRunningSum = 0
         nPhotosRunningSum = 0
@@ -52,16 +52,16 @@ class Tree(object):
             sIndent += '\t'
 
         if eCollections.tag == 'collection':
-            oCollection.setHasChildCollections(True)
-            sCollectionID = eCollections.attrib.get('id')
-            sCollectionID = sCollectionID.split('-')[1] # skip user ID part
+            oCollection.setHasChildrenCollections(True)
+            sCollectionId = eCollections.attrib.get('id')
+            sCollectionId = sCollectionId.split('-')[1] # skip user ID part
             #self.writer.clearAll()
             sTitle = eCollections.attrib.get('title')
             sDescription = eCollections.attrib.get('description')
             sIconSmall = eCollections.attrib.get('iconsmall')
             sIconLarge = eCollections.attrib.get('iconlarge')
 
-            oNewCollection = Collection(sCollectionID, sTitle, sDescription, sIconSmall, sIconLarge)
+            oNewCollection = Collection(sCollectionId, sTitle, sDescription, sIconSmall, sIconLarge)
             oCollection.addMember(oNewCollection)
             nCollectionsRunningSum += 1
 
@@ -70,7 +70,7 @@ class Tree(object):
 
             if eCollections.find('collection') != None:
                 for eCollection in eCollections.findall('collection'):
-                    (nC, nS, nP) = self._recurse(flickr, eCollection, depth+1, oNewCollection)
+                    (nC, nS, nP) = self._recurseBuild(flickr, eCollection, depth+1, oNewCollection)
                     nCollectionsRunningSum += nC
                     nPhotosetsRunningSum += nS
                     nPhotosRunningSum += nP
@@ -111,4 +111,18 @@ class Tree(object):
                 # end of if
         oNewCollection.setStatistics(nCollectionsRunningSum, nPhotosetsRunningSum, nPhotosRunningSum)
         return (nCollectionsRunningSum, nPhotosetsRunningSum, nPhotosRunningSum)
-    
+
+    def findCollection(self, sCollectionId):
+        return self._recurseFind(self.oRoot, sCollectionId)
+
+    def _recurseFind(self, oNode, sCollectionId):
+        if oNode.sID == sCollectionId:
+            return oNode
+
+        if oNode.bHasChildrenCollections and len(oNode.oMembers) > 0:
+            for oN in oNode.oMembers:
+                sId = self._recurseFind(oN, sCollectionId)
+                if sId != None:
+                    return sId
+        
+        return None
