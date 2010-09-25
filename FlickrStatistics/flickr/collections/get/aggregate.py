@@ -18,7 +18,7 @@ class Aggregate(object):
         self.oWriters = oWriters
         self.bVerbose = bVerbose
 
-    def runSingle(self, oOutStream):
+    def runSingleOutput(self, oRoot, bOutputSets, oOutStream):
         if self.bVerbose:
             print '----- Aggregate -----'
         
@@ -29,7 +29,7 @@ class Aggregate(object):
             oWr.setUserUrl(self.oTree.getUserUrl())
             oWr.setVerbose(self.bVerbose)
 
-        self._oneFile(self.oTree.getRoot(), False, oOutStream)
+        self._oneRun(oRoot, bOutputSets, oOutStream)
 
         return
 
@@ -49,7 +49,7 @@ class Aggregate(object):
         sFileName = sFolderName+'index.html'
         oOutStream = open(sFileName, 'w')
         # do not output sets for index page
-        self._oneFile(oRoot, False, oOutStream)   
+        self._oneRun(oRoot, False, oOutStream)   
         oOutStream.close()
         
         for oCol in oRoot.oMembers:
@@ -68,12 +68,12 @@ class Aggregate(object):
             oOutStream = open(sFileName, 'w')
             # called for each first level collection
             # output sets for all other detail pages
-            self._oneFile(oCol, True, oOutStream)
+            self._oneRun(oCol, True, oOutStream)
             oOutStream.close()
 
         return 0
 
-    def _oneFile(self, oRoot, bOutputSets, oOutStream):
+    def _oneRun(self, oRoot, bOutputSets, oOutStream):
         self.oMainWriter.setOutputStream(oOutStream)
         self.oMainWriter.writeHeaderBegin()
 
@@ -85,7 +85,7 @@ class Aggregate(object):
                 oWr.setOutputStream(oOutStream)
                 oWr.writeBegin()
                 oWr.setDepth(0)
-                self._recurse(oRoot, '', bOutputSets, oWr)
+                self._recurseOneRun(oRoot, '', bOutputSets, oWr)
                 oWr.writeEnd()                
 
         if self.bVerbose:
@@ -95,13 +95,13 @@ class Aggregate(object):
             sBeg += ' and Albums'
         self.oMainWriter.writeBegin(sBeg)
         self.oMainWriter.setDepth(0)
-        self._recurse(oRoot, '', bOutputSets, self.oMainWriter)
+        self._recurseOneRun(oRoot, '', bOutputSets, self.oMainWriter)
         self.oMainWriter.writeEnd()
 
         self.oMainWriter.writeHeaderEnd()
         return
         
-    def _recurse(self, oCollection, sHierarchicalDepth, bOutputSets, oWriter):
+    def _recurseOneRun(self, oCollection, sHierarchicalDepth, bOutputSets, oWriter):
         # first compute if we need to output root node
         bOutputRootCollection = True
         if oCollection.sID == None or oWriter.nDepth == 0:
@@ -123,7 +123,7 @@ class Aggregate(object):
             oWriter.writeCollectionBegin()
 
         if len(oCollection.oMembers) > 0:
-            if oCollection.bHasChildCollections:
+            if oCollection.bHasChildrenCollections:
                 if bOutputRootCollection:
                     oWriter.writeEmbeddedBegin()
                 i = 0
@@ -134,7 +134,7 @@ class Aggregate(object):
                         sH = '%d' % i
                     else:
                         sH = '%s.%d' % (sHierarchicalDepth, i)
-                    self._recurse(oColl, sH, bOutputSets, oWriter)
+                    self._recurseOneRun(oColl, sH, bOutputSets, oWriter)
                     oWriter.decDepth()
                 if bOutputRootCollection:
                     oWriter.writeEmbeddedEnd()

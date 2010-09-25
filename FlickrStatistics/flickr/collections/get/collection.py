@@ -21,7 +21,7 @@ class Collection(object):
         self.nCollections = 0
         self.nSets = 0
         self.nPhotos = 0
-        self.bHasChildCollections = False
+        self.bHasChildrenCollections = False
         
     def setStatistics(self, nCollections, nSets, nPhotos):
         self.nCollections = nCollections
@@ -31,7 +31,7 @@ class Collection(object):
     def addMember(self, oMember):
         self.oMembers.append(oMember)
         
-    def setHasChildCollections(self, bFlag):
-        self.bHasChildCollections = bFlag
+    def setHasChildrenCollections(self, bFlag):
+        self.bHasChildrenCollections = bFlag
 
         

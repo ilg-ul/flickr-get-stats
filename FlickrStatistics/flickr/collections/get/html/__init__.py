@@ -165,7 +165,7 @@ def main(*argv):
         else:
             
             oOutStream = open(sArgOutput, 'w')
-            oAgregate.runSingle(oOutStream)
+            oAgregate.runSingleOutput(oTree.getRoot(), False, oOutStream)
             oOutStream.close()
             
     except flickrapi.exceptions.FlickrError as ex:
