@@ -1,0 +1,4 @@
+
+http://codex.wordpress.org/XML-RPC_wp
+
+http://code.google.com/p/python-blogger/
