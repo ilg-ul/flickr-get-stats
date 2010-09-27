@@ -28,7 +28,10 @@ class Writer(WriterBase):
         return
   
     def _computeCollectionRef(self):
-        return '<a href="%scollections/%s/">' % (self.sUserUrl, self.sCollectionID)
+        if self.sLocalUrl != None:
+            return '<a href="%s#C%s">' % (self.sLocalUrl, self.sCollectionID)
+        else:
+            return '<a href="%scollections/%s/">' % (self.sUserUrl, self.sCollectionID)
     
     def _computeCollectionImg(self):
         return '<img src="%s" width="91" height="68" alt="%s" />' % (self.sCollectionSmallIcon, self.sCollectionTitle)

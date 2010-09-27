@@ -18,62 +18,74 @@ class Aggregate(object):
         self.oWriters = oWriters
         self.bVerbose = bVerbose
 
-    def runSingleOutput(self, oRoot, bOutputSets, oOutStream):
-        if self.bVerbose:
-            print '----- Aggregate -----'
-        
+
+    def _initWriters(self):
+
         self.oMainWriter.setUserUrl(self.oTree.getUserUrl())
         self.oMainWriter.setVerbose(self.bVerbose)
 
         for oWr in self.oWriters:
             oWr.setUserUrl(self.oTree.getUserUrl())
             oWr.setVerbose(self.bVerbose)
-
-        self._oneRun(oRoot, bOutputSets, oOutStream)
 
         return
 
-    def runMulti(self, sFolderName):
-        if self.bVerbose:
-            print '----- Aggregate index -----'
-        
-        self.oMainWriter.setUserUrl(self.oTree.getUserUrl())
-        self.oMainWriter.setVerbose(self.bVerbose)
 
-        for oWr in self.oWriters:
-            oWr.setUserUrl(self.oTree.getUserUrl())
-            oWr.setVerbose(self.bVerbose)
+    def runSingleOutput(self, oRoot, bOutputSets, dRemapUrl, oOutStream):
 
-        oRoot = self.oTree.getRoot()
+        self._initWriters()
+        self._oneRun(oRoot, bOutputSets, dRemapUrl, oOutStream)
+
+        return
+
+
+    def _runSingleFile(self, oNode, bOutputSets, sFolderName, sSubFolder, dRemapUrl):
         
-        sFileName = sFolderName+'index.html'
+        sN = sSubFolder + '/'
+        sFN = sFolderName + sN
+        if not os.path.exists(sFN):
+            os.makedirs(sFN)
+        elif not os.path.isdir(sFN):
+            print '%s not a folder' % sFN
+            return 2
+            
+        sFileName = sFN + 'index.html'
         oOutStream = open(sFileName, 'w')
         # do not output sets for index page
-        self._oneRun(oRoot, False, oOutStream)   
+        self._oneRun(oNode, bOutputSets, dRemapUrl, oOutStream)   
         oOutStream.close()
         
-        for oCol in oRoot.oMembers:
-            print '----- Aggregate %s -----' % oCol.sTitle
-            print oCol.sTitle
+        return 0
+        
 
-            sN = 'year-'+oCol.sTitle
-            sFN = sFolderName + sN
-            if not os.path.exists(sFN):
-                os.makedirs(sFN)
-            elif not os.path.isdir(sFN):
-                print '%s not a folder' % sFN
-                return 2
-            
-            sFileName = sFN+'/index.html'
-            oOutStream = open(sFileName, 'w')
-            # called for each first level collection
-            # output sets for all other detail pages
-            self._oneRun(oCol, True, oOutStream)
-            oOutStream.close()
+    def runMultiFolder(self, sFolderName):
+
+        self._initWriters()
+        
+        oRoot = self.oTree.getRoot()
+        oRoot.sTitle = 'index'
+
+        dRemapUrl = {}
+        for oNode in oRoot.oMembers:
+            dRemapUrl[oNode.sID] = '../%s/index.html' % oNode.sTitle
+        
+        iRet = self._runSingleFile(oRoot, False, sFolderName, 'index', dRemapUrl)
+        if iRet != 0:
+            return iRet
+        
+        for oCol in oRoot.oMembers:
+            self._runSingleFile(oCol, True, sFolderName, oCol.sTitle, dRemapUrl)
+            if iRet != 0:
+                return iRet
 
         return 0
 
-    def _oneRun(self, oRoot, bOutputSets, oOutStream):
+
+    def _oneRun(self, oRoot, bOutputSets, dRemapUrl, oOutStream):
+
+        if self.bVerbose:
+            print '--- Aggregate %s ---' % oRoot.sTitle
+        
         self.oMainWriter.setOutputStream(oOutStream)
         self.oMainWriter.writeHeaderBegin()
 
@@ -85,7 +97,7 @@ class Aggregate(object):
                 oWr.setOutputStream(oOutStream)
                 oWr.writeBegin()
                 oWr.setDepth(0)
-                self._recurseOneRun(oRoot, '', bOutputSets, oWr)
+                self._recurseOneRun(oRoot, '', bOutputSets, dRemapUrl, oWr)
                 oWr.writeEnd()                
 
         if self.bVerbose:
@@ -95,13 +107,15 @@ class Aggregate(object):
             sBeg += ' and Albums'
         self.oMainWriter.writeBegin(sBeg)
         self.oMainWriter.setDepth(0)
-        self._recurseOneRun(oRoot, '', bOutputSets, self.oMainWriter)
+        self._recurseOneRun(oRoot, '', bOutputSets, dRemapUrl, self.oMainWriter)
         self.oMainWriter.writeEnd()
 
         self.oMainWriter.writeHeaderEnd()
+
         return
+
         
-    def _recurseOneRun(self, oCollection, sHierarchicalDepth, bOutputSets, oWriter):
+    def _recurseOneRun(self, oCollection, sHierarchicalDepth, bOutputSets, dRemapUrl, oWriter):
         # first compute if we need to output root node
         bOutputRootCollection = True
         if oCollection.sID == None or oWriter.nDepth == 0:
@@ -128,14 +142,29 @@ class Aggregate(object):
                     oWriter.writeEmbeddedBegin()
                 i = 0
                 for oColl in oCollection.oMembers:
+                    sRemapUrl = None
+
+                    # save Local Url
+                    sSaveLocalUrl = oWriter.sLocalUrl
+                    
+                    sCollectionId = oColl.sID
+                    if dRemapUrl != None and sCollectionId in dRemapUrl:
+                        # if defined, remap to local Url
+                        sRemapUrl = dRemapUrl[sCollectionId]
+                        oWriter.setLocalUrl(sRemapUrl)
+                    
                     oWriter.incDepth()
                     i += 1
                     if sHierarchicalDepth == '':
                         sH = '%d' % i
                     else:
                         sH = '%s.%d' % (sHierarchicalDepth, i)
-                    self._recurseOneRun(oColl, sH, bOutputSets, oWriter)
+                    self._recurseOneRun(oColl, sH, bOutputSets, dRemapUrl, oWriter)
                     oWriter.decDepth()
+                    
+                    # restore Local Url
+                    oWriter.setLocalUrl(sSaveLocalUrl)
+                        
                 if bOutputRootCollection:
                     oWriter.writeEmbeddedEnd()
             elif bOutputSets and len(oCollection.oMembers) > 0:

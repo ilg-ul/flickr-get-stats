@@ -161,11 +161,10 @@ def main(*argv):
                    
         oAgregate = Aggregate(oTree, oMainWriter, oWriters, bArgVerbose)
         if sArgFolder != None:
-            nMainRet = oAgregate.runMulti(sArgFolder)
-        else:
-            
+            nMainRet = oAgregate.runMultiFolder(sArgFolder)
+        else:            
             oOutStream = open(sArgOutput, 'w')
-            oAgregate.runSingleOutput(oTree.getRoot(), False, oOutStream)
+            oAgregate.runSingleOutput(oTree.getRoot(), False, None, oOutStream)
             oOutStream.close()
             
     except flickrapi.exceptions.FlickrError as ex:

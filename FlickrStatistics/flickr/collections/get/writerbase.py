@@ -15,13 +15,17 @@ class WriterBase(object):
         '''
         self.bVerbose = False
         self.sName = sName
+        self.sLocalUrl = None
         pass
 
     def setVerbose(self, bVerbose):
         self.bVerbose = bVerbose
     
-    def setUserUrl(self, sUserUrl):
-        self.sUserUrl = sUserUrl
+    def setUserUrl(self, sUrl):
+        self.sUserUrl = sUrl
+
+    def setLocalUrl(self, sUrl):
+        self.sLocalUrl = sUrl
 
     def setOutputStream(self, oOutStream):
         self.oOutStream = oOutStream

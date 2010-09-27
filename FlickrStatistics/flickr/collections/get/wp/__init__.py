@@ -100,8 +100,9 @@ def main(*argv):
     sWpUser = None
     sWpPasswd = None
     sWpKey = None
-    dWpMap = {}
-    aWpOut = []
+    dWpMapByCollectionId = {}   # mapping dictionary; key=colection_id; value=WP_id
+    dWpMapByPageId = {}         # mapping dictionary; key=WP_id; value=colection_id
+    aWpOut = []                 # list of WP_ids to generate
     
     for o, a in opts:
         if o in ('-v', '--verbose'):
@@ -130,8 +131,9 @@ def main(*argv):
             aSub = a.split(':')
             if len(aSub) >= 2:
                 sCollectionId = aSub[0]
-                sWpPageId = aSub[1]
-                dWpMap[sCollectionId] = int(sWpPageId)
+                iWpPageId = int(aSub[1])
+                dWpMapByCollectionId[sCollectionId] = iWpPageId
+                dWpMapByPageId[iWpPageId] = sCollectionId
             else:
                 print 'option "%s=%s" ignored' % (o, a)
         elif o in ('--wp_out'):
@@ -143,7 +145,7 @@ def main(*argv):
         else:
             assert False, 'option not handled'
 
-    if sWpUser == None or sWpPasswd == None or sWpKey == None or len(dWpMap) == 0 or len(aWpOut) == 0:
+    if sWpUrl == None or sWpUser == None or sWpPasswd == None or sWpKey == None or len(dWpMapByCollectionId) == 0 or len(aWpOut) == 0:
         usage()
         return 2
         
@@ -164,6 +166,19 @@ def main(*argv):
     oRoot = None
     nMainRet = 0
     try:
+        dRemapUrl = {}
+        for sCollectionId in dWpMapByCollectionId.keys():
+            if sCollectionId.isdigit():
+                dRemapUrl[sCollectionId] = '/?p=%d' % dWpMapByCollectionId[sCollectionId]
+
+        oBlog = WordPress(sWpUrl, sWpUser, sWpPasswd)
+        if False:
+            aPageList = oBlog.get_page_list(sWpKey)
+            dBlogPagesById = {}
+            for dPage in aPageList:
+                print dPage
+                dBlogPagesById[int(dPage['page_id'])] = dPage
+        
         if oInStream == None:
             flickr = oApp.authenticate()
 
@@ -179,13 +194,10 @@ def main(*argv):
         for nPageId in aWpOut:
             sCollectionId = None
             
-            # find the corresponding Flickr collection id
-            for sColId,nWpId in dWpMap.items():
-                if nPageId == nWpId:
-                    sCollectionId = sColId
-                    break
-            
-            if sCollectionId == None:
+            # find the corresponding Flickr collection id            
+            if nPageId in dWpMapByPageId:
+                sCollectionId = dWpMapByPageId[nPageId]
+            else:
                 print 'Collection %s not found in --wp_map' % sCollectionId
                 continue
             
@@ -200,11 +212,10 @@ def main(*argv):
                     continue
             
             oOutStream = io.StringIO()
-            oAgregate.runSingleOutput(oNode, bOutputSets, oOutStream)
+            oAgregate.runSingleOutput(oNode, bOutputSets, dRemapUrl, oOutStream)
             sContent = oOutStream.getvalue()
             oOutStream.close()
     
-            oBlog = WordPress(sWpUrl, sWpUser, sWpPasswd)
             dPage = oBlog.get_page(nPageId, sWpKey)
             #print dPage['description']
             
