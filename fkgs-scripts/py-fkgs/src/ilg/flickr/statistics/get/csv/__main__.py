@@ -47,10 +47,13 @@ token is stored in the user home directory.
 """
 
 import flickrapi
+import webbrowser
 import sys
 import time
 import getopt
 import os
+import requests
+#import ssl
 
 from ilg.flickr.statistics.get.aggregate import Aggregate
 from ilg.flickr.statistics.get.csv.writer import Writer
@@ -121,14 +124,54 @@ def main(*argv):
     elif not os.path.isdir(sArgFolder):
         print 'not a folder'
         return 2
+    
+    #try:
+    #    _create_unverified_https_context = ssl._create_unverified_context
+    #except AttributeError:
+    #    # Legacy Python that doesn't verify HTTPS certificates by default
+    #    pass
+    #else:
+    #    # Handle target environment that doesn't support HTTPS verification
+    #    ssl._create_default_https_context = _create_unverified_https_context
+   
     # authenticate
     flickr = flickrapi.FlickrAPI(api_key, api_secret)
-    (token, frob) = flickr.get_token_part_one(perms='read')
-    if not token: 
-        raw_input('Press ENTER after you authorized this program')
-    flickr.get_token_part_two((token, frob))
-    #
-    eRsp = flickr.urls_getUserPhotos()
+    if False:
+        flickr.authenticate_via_browser(perms='read')
+    else:
+        # (token, frob) = flickr.get_token_part_one(perms='read')
+        # if not token: 
+        #    raw_input('Press ENTER after you authorized this program')
+        #    flickr.get_token_part_two((token, frob))
+        print('Step 1: authenticate')
+
+        # Only do this if we don't have a valid token already
+        if not flickr.token_valid(perms='read'):
+
+            # Get a request token
+            flickr.get_request_token(oauth_callback='oob')
+
+            # Open a browser at the authentication URL. Do this however
+            # you want, as long as the user visits that URL.
+            authorize_url = flickr.auth_url(perms='read')
+            webbrowser.open_new_tab(authorize_url)
+
+            # Get the verifier code from the user. Do this however you
+            # want, as long as the user gives the application the code.
+            verifier = unicode(raw_input('Verifier code: '))
+
+            # Trade the request token for an access token
+            flickr.get_access_token(verifier)
+
+        print('Step 2: use Flickr')
+ 
+    for retry in range(10):
+        try:
+            eRsp = flickr.urls_getUserPhotos()
+            break
+        except Exception as ex:
+            print '>>>>>>>>>> urls_getUserPhotos %s' % ex   
+
     eUser = eRsp.find('user')
     sUrl = eUser.attrib.get('url')
     if bArgVerbose:

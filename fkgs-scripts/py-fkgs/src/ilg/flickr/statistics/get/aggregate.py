@@ -7,6 +7,7 @@ import tempfile
 import os
 import exceptions
 import flickrapi.exceptions
+import requests
 
 class Aggregate(object):
     '''
@@ -28,7 +29,13 @@ class Aggregate(object):
         nPhotosViewsSum = 0
         self.writer.setKind('photos')
         while True:
-            eRsp = self.flickr.stats_getPopularPhotos(page=iPhotosPage, date=self.day)
+            for retry in range(10):
+                try:
+                    eRsp = self.flickr.stats_getPopularPhotos(page=iPhotosPage, date=self.day)
+                    break
+                except Exception as ex:
+                    print '>>>>>>>>>> stats_getPopularPhotos %s' % ex   
+            
             ePhotos = eRsp.find('photos')
             #ntotal = int(ePhotos.attrib['total'])
             nPhotosPage = int(ePhotos.attrib['page'])
@@ -47,7 +54,13 @@ class Aggregate(object):
                 iDomainsPage = 0
                 nPhotoViewsSum = 0
                 while True:
-                    eRsp = self.flickr.stats_getPhotoDomains(photo_id=sPhotoID, page=iDomainsPage, date=self.day)
+                    for retry in range(10):
+                        try:
+                            eRsp = self.flickr.stats_getPhotoDomains(photo_id=sPhotoID, page=iDomainsPage, date=self.day)
+                            break
+                        except Exception as ex:
+                            print '>>>>>>>>>> stats_getPhotoDomains %s' % ex   
+
                     eDomains = eRsp.find('domains')
                     nDomainsPage = int(eDomains.attrib['page'])
                     nDomainsPages = int(eDomains.attrib['pages'])
@@ -61,7 +74,13 @@ class Aggregate(object):
                         iReferrersPage = 0
                         nDomainViewsSum = 0
                         while True:
-                            eRsp = self.flickr.stats_getPhotoReferrers(photo_id=sPhotoID, domain=sDomainName, page=iReferrersPage, date=self.day)
+                            for retry in range(10):
+                                try:
+                                    eRsp = self.flickr.stats_getPhotoReferrers(photo_id=sPhotoID, domain=sDomainName, page=iReferrersPage, date=self.day)
+                                    break
+                                except Exception as ex:
+                                    print '>>>>>>>>>> stats_getPhotoReferrers %s' % ex  
+
                             eReferrers = eRsp.find('domain')
                             nReferrersPage = int(eReferrers.attrib['page'])
                             nReferrersPages = int(eReferrers.attrib['pages'])
@@ -107,7 +126,13 @@ class Aggregate(object):
         nPhotostreamViewsSum = 0
         self.writer.setKind('photostream')
         while True:
-            eRsp = self.flickr.stats_getPhotostreamDomains(page=iDomainsPage, date=self.day)
+            for retry in range(10):
+                try:
+                    eRsp = self.flickr.stats_getPhotostreamDomains(page=iDomainsPage, date=self.day)
+                    break
+                except Exception as ex:
+                    print '>>>>>>>>>> stats_getPhotostreamDomains %s' % ex   
+
             eDomains = eRsp.find('domains')
             nDomainsPage = int(eDomains.attrib['page'])
             nDomainsPages = int(eDomains.attrib['pages'])
@@ -123,7 +148,13 @@ class Aggregate(object):
                 iReferrersPage = 0
                 nDomainViewsSum = 0
                 while True:
-                    eRsp = self.flickr.stats_getPhotostreamReferrers(domain=sDomainName, page=iReferrersPage, date=self.day)
+                    for retry in range(10):
+                        try:
+                            eRsp = self.flickr.stats_getPhotostreamReferrers(domain=sDomainName, page=iReferrersPage, date=self.day)
+                            break
+                        except Exception as ex:
+                            print '>>>>>>>>>> stats_getPhotostreamReferrers %s' % ex   
+                            
                     eReferrers = eRsp.find('domain')
                     nReferrersPage = int(eReferrers.attrib['page'])
                     nReferrersPages = int(eReferrers.attrib['pages'])
@@ -157,13 +188,25 @@ class Aggregate(object):
     
     def _photoset(self, nPhotosetsViews):
         nPhotosetsViewsSum = 0
-        eRsp = self.flickr.photosets_getList()
+        for retry in range(10):
+            try:
+                eRsp = self.flickr.photosets_getList()
+                break
+            except Exception as ex:
+                print '>>>>>>>>>> photosets_getList %s' % ex   
+
         ePhotosets = eRsp.find('photosets')
         self.writer.setKind('sets')
         for ePhotoset in ePhotosets.findall('photoset'):
             sPhotosetID = ePhotoset.attrib['id']
             self.writer.clearAll()
-            eRsp = self.flickr.stats_getPhotosetStats(photoset_id=sPhotosetID, date=self.day)
+            for retry in range(10):
+                try:
+                    eRsp = self.flickr.stats_getPhotosetStats(photoset_id=sPhotosetID, date=self.day)
+                    break
+                except Exception as ex:
+                    print '>>>>>>>>>> stats_getPhotosetStats %s' % ex   
+
             eStats = eRsp.find('stats')
             sPhotosetViews = eStats.attrib.get('views', '')
             if sPhotosetViews == '':
@@ -179,7 +222,13 @@ class Aggregate(object):
             iDomainsPage = 0
             nPhotosetViewsSum = 0
             while True:
-                eRsp = self.flickr.stats_getPhotosetDomains(photoset_id=sPhotosetID, page=iDomainsPage, date=self.day)
+                for retry in range(10):
+                    try:
+                        eRsp = self.flickr.stats_getPhotosetDomains(photoset_id=sPhotosetID, page=iDomainsPage, date=self.day)
+                        break
+                    except Exception as ex:
+                        print '>>>>>>>>>> stats_getPhotosetDomains %s' % ex   
+                    
                 eDomains = eRsp.find('domains')
                 nDomainsPage = int(eDomains.attrib['page'])
                 nDomainsPages = int(eDomains.attrib['pages'])
@@ -194,7 +243,13 @@ class Aggregate(object):
                     iReferrersPage = 0
                     nDomainViewsSum = 0
                     while True:
-                        eRsp = self.flickr.stats_getPhotosetReferrers(photoset_id=sPhotosetID, domain=sDomainName, page=iReferrersPage, date=self.day)
+                        for retry in range(10):
+                            try:
+                                eRsp = self.flickr.stats_getPhotosetReferrers(photoset_id=sPhotosetID, domain=sDomainName, page=iReferrersPage, date=self.day)
+                                break
+                            except Exception as ex:
+                                print '>>>>>>>>>> stats_getPhotosetReferrers %s' % ex   
+
                         eReferrers = eRsp.find('domain')
                         nReferrersPage = int(eReferrers.attrib['page'])
                         nReferrersPages = int(eReferrers.attrib['pages'])
@@ -241,7 +296,13 @@ class Aggregate(object):
             self.writer.clearAll()
             sTitle = eCollections.attrib.get('title')
             #print sTitle.encode('utf-8')
-            eRsp = self.flickr.stats_getCollectionStats(collection_id=sCollectionID, date=self.day)
+            for retry in range(10):
+                try:
+                    eRsp = self.flickr.stats_getCollectionStats(collection_id=sCollectionID, date=self.day)
+                    break
+                except Exception as ex:
+                    print '>>>>>>>>>> stats_getCollectionStats %s' % ex   
+     
             eStats = eRsp.find('stats')
             sCollectionViews = eStats.attrib.get('views', '')
             if sCollectionViews != '':
@@ -254,7 +315,13 @@ class Aggregate(object):
                     #nDomainsViewsSum = 0
                     nCollectionViewsSum = 0
                     while True:
-                        eRsp = self.flickr.stats_getCollectionDomains(collection_id=sCollectionID, page=iDomainsPage, date=self.day)
+                        for retry in range(10):
+                            try:
+                                eRsp = self.flickr.stats_getCollectionDomains(collection_id=sCollectionID, page=iDomainsPage, date=self.day)
+                                break
+                            except Exception as ex:
+                                print '>>>>>>>>>> stats_getCollectionDomains %s' % ex   
+
                         eDomains = eRsp.find('domains')
                         nDomainsPage = int(eDomains.attrib['page'])
                         nDomainsPages = int(eDomains.attrib['pages'])
@@ -270,7 +337,13 @@ class Aggregate(object):
                             iReferrersPage = 0
                             nDomainViewsSum = 0
                             while True:
-                                eRsp = self.flickr.stats_getCollectionReferrers(collection_id=sCollectionID, domain=sDomainName, page=iReferrersPage, date=self.day)
+                                for retry in range(10):
+                                    try:
+                                        eRsp = self.flickr.stats_getCollectionReferrers(collection_id=sCollectionID, domain=sDomainName, page=iReferrersPage, date=self.day)
+                                        break
+                                    except Exception as ex:
+                                        print '>>>>>>>>>> stats_getCollectionReferrers %s' % ex   
+
                                 eReferrers = eRsp.find('domain')
                                 nReferrersPage = int(eReferrers.attrib['page'])
                                 nReferrersPages = int(eReferrers.attrib['pages'])
@@ -313,7 +386,12 @@ class Aggregate(object):
     
     def _collection(self, nCollectionsViews):
         """Aggregate collections"""
-        eRsp = self.flickr.collections_getTree()
+        for retry in range(10):
+            try:
+                eRsp = self.flickr.collections_getTree()
+                break
+            except Exception as ex:
+                print '>>>>>>>>>> stats_getPopularPhotos %s' % ex   
         eCollections = eRsp.find('collections')
         self.writer.setKind('collections')
         nCollectionsViewsSum = self._collection_recurse(eCollections)
@@ -338,12 +416,16 @@ class Aggregate(object):
             return
         self.writer.setDate(sDay)
         # start with totals for the day
-        try:
-            eRsp = self.flickr.stats_getTotalViews(date=sDay)
-        except flickrapi.exceptions.FlickrError:
-            if self.bVerbose:
-                print '[no stats for day %s]' % self.day           
-            return # no stats for that date
+        for retry in range(10):
+            try:
+                eRsp = self.flickr.stats_getTotalViews(date=sDay)
+                break
+            except flickrapi.exceptions.FlickrError:
+                if self.bVerbose:
+                    print '[no stats for day %s]' % self.day           
+                return # no stats for that date
+            except Exception as ex:
+                    print '>>>>>>>>>> stats_getTotalViews %s' % ex 
         #
         eStats = eRsp.find('stats')
         nViewsTotal = int(eStats.find('total').attrib['views'])
