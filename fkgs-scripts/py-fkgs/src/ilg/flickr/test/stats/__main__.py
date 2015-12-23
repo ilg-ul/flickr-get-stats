@@ -1,6 +1,6 @@
 """
 Usage:
-    python -m ilg.flickr.test
+    python -m ilg.flickr.test.stats
 
 Purpose:
     Test the SSL spurious exceptions.
@@ -31,7 +31,6 @@ def main(*argv):
     eUser = eRsp.find('user')
     sUrl = eUser.attrib.get('url')
     print sUrl
-
 
     success = 0
     failure = 0
